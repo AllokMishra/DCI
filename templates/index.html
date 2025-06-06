@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Expression Capture | NeuraSense AI</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <style>
+    body {
+      background: radial-gradient(circle at 10% 20%, #030712, #111827);
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    .camera {
+      border: 4px solid #4F46E5;
+      border-radius: 1rem;
+      overflow: hidden;
+      box-shadow: 0 0 20px #6366F1;
+    }
+    .button-glow {
+      background-color: #4F46E5;
+      box-shadow: 0 0 10px #6366F1, 0 0 20px #6366F1 inset;
+      transition: 0.3s;
+    }
+    .button-glow:hover {
+      background-color: #4338CA;
+      box-shadow: 0 0 15px #818CF8, 0 0 25px #818CF8 inset;
+    }
+  </style>
+</head>
+<body class="text-white p-4">
+  <div class="max-w-md mx-auto mt-10">
+    <h1 class="text-4xl font-bold text-center mb-6">NeuraSense AI</h1>
+    <p class="text-center text-gray-400 mb-6">Real-Time Facial Expression Capture</p>
+    <div class="bg-gray-900 p-4 rounded-xl shadow-xl">
+      <video id="video" autoplay playsinline class="w-full camera mb-4"></video>
+      <select id="expression" class="w-full mb-3 p-2 rounded text-black">
+        <option value="angry">Angry</option>
+        <option value="disgust">Disgust</option>
+        <option value="fear">Fear</option>
+        <option value="happy">Happy</option>
+        <option value="sad">Sad</option>
+        <option value="surprise">Surprise</option>
+        <option value="neutral">Neutral</option>
+      </select>
+      <input id="person" type="text" placeholder="Enter Person ID" class="w-full mb-3 p-2 rounded text-black">
+      <button onclick="capture()" class="w-full py-2 button-glow rounded font-bold text-lg">Capture Expression</button>
+    </div>
+    <p id="status" class="text-center text-green-400 mt-3"></p>
+  </div>
+  <script>
+    const video = document.getElementById('video');
+    const personInput = document.getElementById('person');
+    const expressionInput = document.getElementById('expression');
+    const status = document.getElementById('status');
+
+    navigator.mediaDevices.getUserMedia({ video: true })
+      .then(stream => { video.srcObject = stream })
+      .catch(err => alert('Camera access is required'));
+
+    function capture() {
+      const canvas = document.createElement('canvas');
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      canvas.getContext('2d').drawImage(video, 0, 0);
+      const image = canvas.toDataURL('image/jpeg');
+
+      const data = new FormData();
+      data.append('image', image);
+      data.append('person', personInput.value);
+      data.append('expression', expressionInput.value);
+
+      fetch('/upload', { method: 'POST', body: data })
+        .then(res => res.text())
+        .then(text => {
+          status.innerText = '✅ ' + text;
+          setTimeout(() => status.innerText = '', 3000);
+        })
+        .catch(err => status.innerText = '❌ Upload Failed');
+    }
+  </script>
+</body>
+</html>
