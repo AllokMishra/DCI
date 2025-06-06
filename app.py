@@ -11,8 +11,9 @@ import shutil
 app = Flask(__name__)
 UPLOAD_FOLDER = 'dataset'
 CSV_LOG = 'metadata.csv'
-BOT_TOKEN = '8155990401:AAF1F2S7nlg2aUEteB8enKIE2h57PyrxUdA'  
-CHAT_ID = '8073724693'      
+BOT_TOKEN = '8155990401:AAF1F2S7nlg2aUEteB8enKIE2h57PyrxUdA'
+CHAT_ID = '8073724693'
+
 FACE_CASCADE = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
@@ -21,16 +22,19 @@ def index():
     return render_template('index.html')
 
 def send_zip_to_telegram(person):
-    zip_filename = f'/persistent/{person}.zip'
     folder_to_zip = os.path.join(UPLOAD_FOLDER, person)
-
-    shutil.make_archive(zip_filename.replace('.zip', ''), 'zip', folder_to_zip)
+    zip_filename = f'{person}.zip'
+    shutil.make_archive(person, 'zip', folder_to_zip)
 
     with open(zip_filename, 'rb') as f:
         files = {'document': f}
         url = f'https://api.telegram.org/bot{BOT_TOKEN}/sendDocument?chat_id={CHAT_ID}'
         r = requests.post(url, files=files)
         print("Telegram Response:", r.text)
+
+    # Cleanup ZIP and image folder after sending
+    os.remove(zip_filename)
+    shutil.rmtree(folder_to_zip, ignore_errors=True)
 
 @app.route('/upload', methods=['POST'])
 def upload():
@@ -86,7 +90,7 @@ def serve_image(person, expression, filename):
 
 @app.route('/download_csv')
 def download_csv():
-    return send_from_directory('/persistent', 'metadata.csv', as_attachment=True)
+    return send_from_directory('.', 'metadata.csv', as_attachment=True)
 
 if __name__ == '__main__':
     app.run(debug=True, host="0.0.0.0", port=10000)
